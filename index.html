@@ -17,7 +17,7 @@ a{color:#22302A}a:hover{color:#000}
 </style>
 <style>
 :root{color-scheme:light}
-html,body{background:#FAF9F7}
+html,body{background:#FAF9F7;overflow-x:hidden}
 #app{width:390px;margin:0 auto;overflow:hidden}
 @media (prefers-reduced-motion: reduce){.petal{animation:none;display:none}}
 button:focus-visible,a:focus-visible{outline:2px solid #22302A;outline-offset:2px}
@@ -398,7 +398,7 @@ class Component extends DCLogic {
       music: this.state.music,
       musicOff: !this.state.music,
       musicLabel: this.state.music ? '배경음악 끄기' : '배경음악 켜기',
-      toggleMusic: () => { var on = !this.state.music; var a = document.getElementById('bgm'); if (a) { if (on) { a.play().catch(function(){}); } else { a.pause(); } } this.setState({ music: on }); },
+      toggleMusic: () => { var a = document.getElementById('bgm'); if (!a) return; window.__bgmUserOff = !a.paused; if (a.paused) { a.play().catch(function(){}); } else { a.pause(); } },
       petals: this.props.petals ?? true
     };
   }
@@ -496,15 +496,28 @@ class Component extends DCLogic {
   var Component = new Function('DCLogic', document.getElementById('logic').textContent + '\nreturn Component;')(DCLogic);
   var props = {};
   Object.keys(PROPS_DEF).forEach(function (k) { if (k.charAt(0) !== '$' && 'default' in PROPS_DEF[k]) props[k] = PROPS_DEF[k].default; });
-  comp = new Component(props);
+  comp = new Component(props); window.__inv = comp;
   render(); mounted = true;
   if (comp.componentDidMount) comp.componentDidMount();
   app.addEventListener('click', function (e) {
     var t = e.target;
     while (t && t !== app) { if (t._click) { t._click(e); return; } t = t.parentNode; }
   });
-  function fit() { var w = window.innerWidth; app.style.zoom = w < 560 ? (w / 390) : 1; }
+  function fit() { var w = Math.min(window.innerWidth, document.documentElement.clientWidth || 9999, (window.screen && screen.width) || 9999); app.style.zoom = w < 560 ? (w / 390) : 1; }
   fit(); window.addEventListener('resize', fit);
+})();
+</script>
+
+<script>
+(function () {
+  var a = document.getElementById('bgm'); if (!a) return;
+  function sync() { if (window.__inv) window.__inv.setState({ music: !a.paused }); }
+  a.addEventListener('play', sync); a.addEventListener('pause', sync);
+  var evs = ['pointerdown', 'touchstart', 'touchend', 'keydown', 'click'];
+  function onFirst(e) { if (e && e.target && e.target.closest && e.target.closest('button[aria-label*="배경음악"]')) { evs.forEach(function (x) { document.removeEventListener(x, onFirst, true); }); return; } evs.forEach(function (e) { document.removeEventListener(e, onFirst, true); }); if (a.paused && !window.__bgmUserOff) a.play().catch(function(){}); }
+  function arm() { evs.forEach(function (e) { document.addEventListener(e, onFirst, true); }); }
+  var tryPlay = function () { var r = a.play(); if (r && r.catch) r.catch(arm); };
+  if (document.readyState === 'complete') tryPlay(); else window.addEventListener('load', tryPlay);
 })();
 </script>
 
