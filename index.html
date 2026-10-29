@@ -276,7 +276,7 @@ button:focus-visible,a:focus-visible{outline:2px solid #22302A;outline-offset:2p
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { photo: -1, page: 0, open: {}, copied: '', music: false };
+    this.state = { photo: -1, page: 0, open: {}, copied: '', music: true };
   }
   componentDidMount() {
     this._tick = setInterval(() => this.forceUpdate(), 1000);
@@ -398,7 +398,7 @@ class Component extends DCLogic {
       music: this.state.music,
       musicOff: !this.state.music,
       musicLabel: this.state.music ? '배경음악 끄기' : '배경음악 켜기',
-      toggleMusic: () => { var a = document.getElementById('bgm'); if (!a) return; window.__bgmUserOff = !a.paused; if (a.paused) { a.play().catch(function(){}); } else { a.pause(); } },
+      toggleMusic: () => { var a = document.getElementById('bgm'); if (this.state.music && a && a.paused) { a.play().catch(function(){}); return; } var want = !this.state.music; window.__bgmUserOff = !want; if (a) { if (want) { a.play().catch(function(){}); } else { a.pause(); } } this.setState({ music: want }); },
       petals: this.props.petals ?? true
     };
   }
@@ -511,8 +511,6 @@ class Component extends DCLogic {
 <script>
 (function () {
   var a = document.getElementById('bgm'); if (!a) return;
-  function sync() { if (window.__inv) window.__inv.setState({ music: !a.paused }); }
-  a.addEventListener('play', sync); a.addEventListener('pause', sync);
   var evs = ['pointerdown', 'touchstart', 'touchend', 'keydown', 'click'];
   function onFirst(e) { if (e && e.target && e.target.closest && e.target.closest('button[aria-label*="배경음악"]')) { evs.forEach(function (x) { document.removeEventListener(x, onFirst, true); }); return; } evs.forEach(function (e) { document.removeEventListener(e, onFirst, true); }); if (a.paused && !window.__bgmUserOff) a.play().catch(function(){}); }
   function arm() { evs.forEach(function (e) { document.addEventListener(e, onFirst, true); }); }
