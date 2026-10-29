@@ -6,6 +6,10 @@
 <meta property="og:title" content="정인식 ♥ 김새별 결혼합니다">
 <meta property="og:description" content="2027년 2월 28일 일요일 오전 11시 · 소풍컨벤션웨딩홀 7층 라온제나홀">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://saebyeolkim.github.io/wedding/">
+<meta property="og:image" content="https://saebyeolkim.github.io/wedding/og.jpg">
+<meta property="og:image:width" content="800">
+<meta property="og:image:height" content="600">
 <title>인식 · 새별 청첩장</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400;1,6..96,500&amp;family=Mrs+Saint+Delafield&amp;family=Noto+Serif+KR:wght@300;400&amp;family=Noto+Sans+KR:wght@300;400;500&amp;display=swap">
 <style>
@@ -265,7 +269,7 @@ button:focus-visible,a:focus-visible{outline:2px solid #22302A;outline-offset:2p
     <div style="font-family: 'Mrs Saint Delafield', cursive; font-size: 54px; line-height: 1">Thank you</div>
     <div style="font-size: 13px; line-height: 1.8; text-align: center; color: #E6E3DD">함께해 주시는 모든 분들께 감사드립니다.</div>
     <div style="width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-top: 12px">
-      <button type="button" style="min-height: 48px; border: 0; background: #FAF9F7; color: #1E1C1A; font-family: 'Noto Sans KR', sans-serif; font-weight: 400; font-size: 14px; cursor: pointer">카카오톡 공유하기</button>
+      <button type="button" id="kakaoShareBtn" style="min-height: 48px; border: 0; background: #FAF9F7; color: #1E1C1A; font-family: 'Noto Sans KR', sans-serif; font-weight: 400; font-size: 14px; cursor: pointer">카카오톡 공유하기</button>
       <button type="button" onClick="{{copyLink}}" style="min-height: 48px; border: 1px solid #5D7265; background: transparent; color: #E6E3DD; font-family: 'Noto Sans KR', sans-serif; font-weight: 300; font-size: 14px; cursor: pointer">{{linkCopyLabel}}</button>
     </div>
     <div style="font-family: 'Mrs Saint Delafield', cursive; font-size: 28px; padding-top: 24px">Insik &amp; Saebyeol</div>
@@ -394,7 +398,7 @@ class Component extends DCLogic {
       addressCopyLabel: c === 'addr' ? '주소가 복사됐어요' : '주소 복사하기',
       copyAddress: () => this.copy('경기도 부천시 송내대로 239 부천터미널소풍 7층 소풍컨벤션웨딩홀', 'addr'),
       linkCopyLabel: c === 'link' ? '링크 복사됨' : '링크 복사하기',
-      copyLink: () => this.copy(window.location.href, 'link'),
+      copyLink: () => this.copy(window.location.origin + window.location.pathname, 'link'),
       music: this.state.music,
       musicOff: !this.state.music,
       musicLabel: this.state.music ? '배경음악 끄기' : '배경음악 켜기',
@@ -524,6 +528,18 @@ class Component extends DCLogic {
   var tryPlay = function () { var r = a.play(); if (r && r.catch) r.catch(arm); };
   if (document.readyState === 'complete') tryPlay(); else window.addEventListener('load', tryPlay);
 })();
+</script>
+
+<script>
+document.addEventListener('click', function (e) {
+  var b = e.target.closest && e.target.closest('#kakaoShareBtn'); if (!b) return;
+  var url = location.origin + location.pathname;
+  var data = { title: '정인식 ♥ 김새별 결혼합니다', text: '2027년 2월 28일 일요일 오전 11시\n소풍컨벤션웨딩홀 7층 라온제나홀', url: url };
+  function done(msg) { var t = b.textContent; b.textContent = msg; setTimeout(function () { b.textContent = t; }, 1800); }
+  if (navigator.share) { navigator.share(data).catch(function () {}); return; }
+  if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { done('링크 복사됨 · 카톡에 붙여넣어 주세요'); }, function () { done(url); });
+  else done(url);
+});
 </script>
 
 </body>
