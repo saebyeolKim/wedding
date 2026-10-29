@@ -511,9 +511,16 @@ class Component extends DCLogic {
 <script>
 (function () {
   var a = document.getElementById('bgm'); if (!a) return;
-  var evs = ['pointerdown', 'touchstart', 'touchend', 'keydown', 'click'];
-  function onFirst(e) { if (e && e.target && e.target.closest && e.target.closest('button[aria-label*="배경음악"]')) { evs.forEach(function (x) { document.removeEventListener(x, onFirst, true); }); return; } evs.forEach(function (e) { document.removeEventListener(e, onFirst, true); }); if (a.paused && !window.__bgmUserOff) a.play().catch(function(){}); }
-  function arm() { evs.forEach(function (e) { document.addEventListener(e, onFirst, true); }); }
+  var evs = ['click', 'touchend', 'pointerup', 'keydown'];
+  var armed = false;
+  function disarm() { armed = false; evs.forEach(function (x) { document.removeEventListener(x, onFirst, true); }); }
+  function onFirst(e) {
+    if (e && e.target && e.target.closest && e.target.closest('button[aria-label*="배경음악"]')) { disarm(); return; }
+    if (window.__bgmUserOff || !a.paused) { disarm(); return; }
+    var r = a.play();
+    if (r && r.then) r.then(disarm, function () {}); else disarm();
+  }
+  function arm() { if (armed) return; armed = true; evs.forEach(function (x) { document.addEventListener(x, onFirst, true); }); }
   var tryPlay = function () { var r = a.play(); if (r && r.catch) r.catch(arm); };
   if (document.readyState === 'complete') tryPlay(); else window.addEventListener('load', tryPlay);
 })();
