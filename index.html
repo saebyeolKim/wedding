@@ -280,7 +280,7 @@ button:focus-visible,a:focus-visible{outline:2px solid #22302A;outline-offset:2p
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { photo: -1, page: 0, open: {}, copied: '', music: true };
+    this.state = { photo: -1, page: 0, open: {}, copied: '', music: false };
   }
   componentDidMount() {
     this._tick = setInterval(() => this.forceUpdate(), 1000);
@@ -344,8 +344,8 @@ class Component extends DCLogic {
 
     const c = this.state.copied;
     const groupDefs = [
-      { key: 'groom', title: '신랑측 계좌번호', items: [['신랑', '정인식'], ['아버지', '정현욱'], ['어머니', '전미자']] },
-      { key: 'bride', title: '신부측 계좌번호', items: [['신부', '김새별'], ['아버지', '김경환'], ['어머니', '종선미']] }
+      { key: 'groom', title: '신랑측 계좌번호', items: [['신랑', '정인식', '카카오뱅크', '3333-07-2996057'], ['아버지', '정현욱', '국민은행', '219601-04-221262'], ['어머니', '전미자', '국민은행', '591902-01-036496']] },
+      { key: 'bride', title: '신부측 계좌번호', items: [['신부', '김새별', '카카오뱅크', '3333-01-8851055'], ['아버지', '김경환', '', ''], ['어머니', '종선미', '', '']] }
     ];
     const accountGroups = groupDefs.map((g) => {
       const open = !!this.state.open[g.key];
@@ -355,12 +355,12 @@ class Component extends DCLogic {
         expanded: open ? 'true' : 'false',
         chevronStyle: 'transition: transform .2s; transform: rotate(' + (open ? 180 : 0) + 'deg)',
         toggle: () => this.setState({ open: Object.assign({}, this.state.open, { [g.key]: !open }) }),
-        items: g.items.map((it, i) => {
+        items: g.items.filter((it) => !!it[3]).map((it, i) => {
           const key = g.key + i;
           return {
-            role: it[0], name: it[1], bank: '[은행]', num: '[000-0000-0000]',
+            role: it[0], name: it[1], bank: it[2], num: it[3],
             copyLabel: c === key ? '복사됨' : '복사',
-            copy: () => this.copy('[은행] [000-0000-0000]', key)
+            copy: () => this.copy(it[2] + ' ' + it[3].replace(/-/g, ''), key)
           };
         })
       };
@@ -368,8 +368,8 @@ class Component extends DCLogic {
 
     const person = (role, name, phone) => ({ role: role, name: name, phone: phone || '', hasPhone: !!phone, noPhone: !phone, tel: 'tel:' + (phone || '').replace(/-/g, ''), sms: 'sms:' + (phone || '').replace(/-/g, ''), callLabel: role + ' ' + name + '에게 전화하기', smsLabel: role + ' ' + name + '에게 문자 보내기' });
     const contactSides = [
-      { title: 'GROOM', people: [person('신랑', '정인식', '010-4143-2237'), person('아버지', '정현욱'), person('어머니', '전미자')] },
-      { title: 'BRIDE', people: [person('신부', '김새별', '010-3618-4343'), person('아버지', '김경환'), person('어머니', '종선미')] }
+      { title: 'GROOM', people: [person('신랑', '정인식', '010-4143-2237')] },
+      { title: 'BRIDE', people: [person('신부', '김새별', '010-3618-4343')] }
     ];
 
     return {
@@ -519,6 +519,7 @@ class Component extends DCLogic {
   var armed = false;
   function disarm() { armed = false; evs.forEach(function (x) { document.removeEventListener(x, onFirst, true); }); }
   function onFirst(e) {
+    if (document.getElementById('bgmIntro')) return;
     if (e && e.target && e.target.closest && e.target.closest('button[aria-label*="배경음악"]')) { disarm(); return; }
     if (window.__bgmUserOff || !a.paused) { disarm(); return; }
     var r = a.play();
@@ -540,6 +541,49 @@ document.addEventListener('click', function (e) {
   if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { done('링크 복사됨 · 카톡에 붙여넣어 주세요'); }, function () { done(url); });
   else done(url);
 });
+</script>
+
+<style>
+html{scrollbar-gutter:stable}
+#bgmIntro{position:fixed;inset:0;z-index:1000;cursor:pointer;transition:opacity .45s ease,visibility .45s}
+#bgmIntro.hide{opacity:0;visibility:hidden}
+#bgmIntro .bi-spot{position:absolute;border-radius:50%;box-shadow:0 0 0 200vmax rgba(28,20,24,.48);pointer-events:none}
+#bgmIntro .bi-spot::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid rgba(255,255,255,.85);animation:biPulse 1.8s ease-out infinite}
+@keyframes biPulse{0%{transform:scale(.92);opacity:1}100%{transform:scale(1.35);opacity:0}}
+@media (prefers-reduced-motion: reduce){#bgmIntro .bi-spot::after{animation:none}}
+#bgmIntro .bi-text{position:absolute;font-family:'Noto Serif KR',serif;font-size:14px;letter-spacing:.03em;color:#FFFFFF;white-space:nowrap;text-shadow:0 1px 8px rgba(0,0,0,.3);pointer-events:none}
+</style>
+<div id="bgmIntro" aria-hidden="true"><div class="bi-spot"></div><div class="bi-text">배경음악이 준비되어 있습니다</div></div>
+<script>
+(function () {
+  var o = document.getElementById('bgmIntro'), a = document.getElementById('bgm');
+  var spot = o.querySelector('.bi-spot'), txt = o.querySelector('.bi-text');
+  var root = document.documentElement;
+  function btn() { return document.querySelector('button[aria-label^="배경음악"]'); }
+  function place() {
+    var b = btn(); if (!b) return false;
+    var r = b.getBoundingClientRect(); if (!r.width) return false;
+    if (r.bottom > innerHeight - 12 || r.top < 0) { window.scrollTo(0, Math.max(0, scrollY + r.top - innerHeight / 2)); o._scrolled = true; r = b.getBoundingClientRect(); }
+    var pad = 0;
+    spot.style.left = (r.left - pad) + 'px'; spot.style.top = (r.top - pad) + 'px';
+    spot.style.width = (r.width + pad * 2) + 'px'; spot.style.height = (r.height + pad * 2) + 'px';
+    txt.style.left = (r.left - 2) + 'px'; txt.style.top = (r.bottom + 16) + 'px';
+    o._r = r; return true;
+  }
+  var live = true;
+  function loop() { if (!live) return; place(); requestAnimationFrame(loop); }
+  function init() { root.style.overflow = 'hidden'; if (!place()) return setTimeout(init, 100); loop(); }
+  init(); addEventListener('resize', place);
+  var closing = false;
+  function close() { if (closing || !o.parentNode) return; closing = true; o.style.pointerEvents = 'none'; o.classList.add('hide'); setTimeout(function () { live = false; removeEventListener('resize', place); if (o.parentNode) o.parentNode.removeChild(o); root.style.overflow = ''; if (o._scrolled) window.scrollTo({ top: 0, behavior: 'smooth' }); }, 480); }
+  o.addEventListener('click', function (e) {
+    var r = o._r, hit = r && e.clientX >= r.left - 10 && e.clientX <= r.right + 10 && e.clientY >= r.top - 10 && e.clientY <= r.bottom + 10;
+    if (hit) { window.__bgmUserOff = false; if (a) { var p = a.play(); if (p && p.catch) p.catch(function(){}); } if (window.__inv) window.__inv.setState({ music: true }); }
+    else { window.__bgmUserOff = true; }
+    close();
+  });
+  if (a) a.addEventListener('play', close);
+})();
 </script>
 
 </body>
